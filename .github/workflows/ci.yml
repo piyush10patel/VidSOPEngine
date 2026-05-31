@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+# Cancel in-flight runs for the same ref on subsequent pushes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-quality-gate:
+    name: Backend — quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Catches syntax errors in any .py file without importing them
+      # (and without installing the heavyweight deps).
+      - name: Compile every Python source file
+        working-directory: backend
+        run: python -m compileall -q app evals tools
+
+      # The deterministic eval gate has zero external dependencies and
+      # zero LLM calls. It scores each fixture's baseline_sop against
+      # its expected_sop and fails the build if any metric regresses
+      # below the threshold in evals/ci_gate.py.
+      - name: Deterministic eval gate (no LLM cost)
+        working-directory: backend
+        run: python -m evals.ci_gate
+
+  frontend-lint-build:
+    name: Frontend — lint + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      # Build is the strongest signal — it runs the Next.js compiler,
+      # TS type-checker, and the React compiler. Catches schema
+      # mismatches, missing pages, broken imports.
+      - name: Build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+        run: npm run build

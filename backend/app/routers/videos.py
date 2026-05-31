@@ -98,6 +98,7 @@ async def upload_video(
     ),
     video_service: VideoService = Depends(get_video_service),
     current_user: User = Depends(require_manager_or_admin()),
+    db: AsyncSession = Depends(get_db),
 ) -> VideoUploadResponse:
     """
     Upload a video file for processing.
@@ -129,6 +130,11 @@ async def upload_video(
                 "'auto' | 'procedural_complex' | 'atomic_simple'"
             ),
         )
+
+    # Cost guardrail — refuse the upload if the user has blown their
+    # monthly LLM-token budget. No-op when the budget is unlimited.
+    from app.services.budget_service import assert_within_budget
+    await assert_within_budget(db, current_user)
 
     video = await video_service.upload(
         file=file, title=title, user_id=current_user.id,

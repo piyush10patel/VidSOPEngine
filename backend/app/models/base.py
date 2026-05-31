@@ -178,6 +178,12 @@ async def init_db():
         "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'admin'",
         "ALTER TABLE users ADD COLUMN active BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN pinned_examples_json JSON",
+        # MLOps audit log — track which prompt + model produced each SOP
+        "ALTER TABLE sops ADD COLUMN prompt_version VARCHAR(40)",
+        "ALTER TABLE sops ADD COLUMN model_used VARCHAR(120)",
+        # Per-user monthly token budget counter.
+        "ALTER TABLE users ADD COLUMN tokens_used_this_period INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN period_started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
     ]
 
     for stmt in migrations:

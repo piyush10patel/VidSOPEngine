@@ -169,6 +169,20 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
     return user_to_response(current_user)
 
 
+@router.get("/me/usage")
+async def get_my_usage(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Monthly token-budget snapshot for the calling user.
+
+    Shape: ``{used, budget, remaining, unlimited, period_started_at}``.
+    """
+    from app.services.budget_service import check_and_reset, usage_snapshot
+    user = await check_and_reset(db, current_user)
+    return usage_snapshot(user)
+
+
 @router.get("/languages")
 async def list_languages() -> dict:
     """Public — registry of platform-supported languages."""

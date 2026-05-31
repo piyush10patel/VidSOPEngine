@@ -65,6 +65,10 @@ class SOP(Base):
     training_generated_at: Mapped[Optional[datetime]] = mapped_column(
         nullable=True, default=None
     )
+    # Provenance — captured at generation time so a regressed SOP can be
+    # attributed to the exact prompt + model that produced it.
+    prompt_version: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    model_used: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[Optional[datetime]] = mapped_column(
         default=None, onupdate=datetime.utcnow

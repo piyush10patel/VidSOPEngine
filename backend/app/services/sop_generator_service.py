@@ -1,8 +1,24 @@
 """SOP Generator service - uses DSPy pipeline for modular, testable prompting."""
 import json
+import os
 import re
 from typing import Optional
 from uuid import uuid4
+
+
+def _current_prompt_version() -> str:
+    """Identifier for the prompt set baked into this deploy.
+
+    Prompts are frozen at deploy time (CLAUDE.md INV-12), so the prompt
+    version is the deploy commit SHA. Render and Vercel both set their
+    respective env vars automatically; fall back to 'dev' for local runs.
+    """
+    sha = (
+        os.environ.get("RENDER_GIT_COMMIT")
+        or os.environ.get("VERCEL_GIT_COMMIT_SHA")
+        or os.environ.get("GIT_COMMIT_SHA")
+    )
+    return (sha[:12] if sha else "dev")
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -510,6 +526,10 @@ class SOPGeneratorService:
             visibility_scope="private",
             allowed_role_min="manager",
             shared_with_users_json=[],
+            # MLOps audit trail — attribute the output to the deploy that
+            # produced it and the synthesis model that ran the pipeline.
+            prompt_version=_current_prompt_version(),
+            model_used=settings.sop_synthesis_model,
         )
 
         self.db.add(sop)
@@ -521,6 +541,21 @@ class SOPGeneratorService:
         except Exception as e:
             import logging as _l
             _l.getLogger(__name__).warning(f"SOP artifact status update failed: {e}")
+
+        # Charge the user's monthly budget. Estimate is fine — the goal
+        # is operator-level cost visibility, not exact accounting. Failures
+        # here must not block the SOP from being returned.
+        try:
+            from app.services.budget_service import record_tokens, ESTIMATED_TOKENS_PER_GENERATION
+            from sqlalchemy import select
+            from app.models.user import User
+            result = await self.db.execute(select(User).where(User.id == video.user_id))
+            user = result.scalar_one_or_none()
+            if user is not None:
+                await record_tokens(self.db, user, ESTIMATED_TOKENS_PER_GENERATION)
+        except Exception as e:
+            import logging as _l
+            _l.getLogger(__name__).warning(f"budget record_tokens failed: {e}")
 
         return sop
 

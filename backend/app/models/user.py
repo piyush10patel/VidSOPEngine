@@ -46,4 +46,11 @@ class User(Base):
         JSON, default=list, nullable=True
     )
 
+    # Monthly token budget tracking. The counter resets when the calling
+    # code observes that we've crossed into a new UTC month (no scheduler
+    # required). When TOKEN_BUDGET_MONTHLY_DEFAULT is 0 the budget is
+    # treated as unlimited and the counter is informational only.
+    tokens_used_this_period: Mapped[int] = mapped_column(default=0, server_default="0")
+    period_started_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
     videos: Mapped[List["Video"]] = relationship(back_populates="user")
