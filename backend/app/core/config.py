@@ -269,11 +269,20 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):
+        """Accept either a JSON array string or a comma-separated string.
+
+        Render's dashboard doesn't escape values, so the JSON-array form is
+        easy to typo (smart quotes, missing brackets). The CSV form keeps
+        deploys friction-free:
+            CORS_ORIGINS=https://a.vercel.app,http://localhost:3000
+        """
         if isinstance(v, str):
             v = v.strip()
             if not v:
                 return ["http://localhost:3000"]
-            return json.loads(v)
+            if v.startswith("["):
+                return json.loads(v)
+            return [s.strip() for s in v.split(",") if s.strip()]
         return v
 
     @property
