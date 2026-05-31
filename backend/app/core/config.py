@@ -2,7 +2,6 @@
 import json
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -259,31 +258,30 @@ class Settings(BaseSettings):
     auth_cookie_samesite: str = "lax"
 
     # CORS
-    cors_origins: List[str] = ["http://localhost:3000"]
+    # Stored as a raw string so pydantic-settings does NOT try to JSON-decode
+    # it from the env (which crashed startup whenever the value wasn't valid
+    # JSON — e.g. CSV input or smart-quote paste). Read the parsed list via
+    # the cors_origin_list property below.
+    #
+    # Accepted formats (both work):
+    #   CORS_ORIGINS=https://a.vercel.app,http://localhost:3000
+    #   CORS_ORIGINS=["https://a.vercel.app","http://localhost:3000"]
+    cors_origins: str = "http://localhost:3000"
     # Optional regex applied alongside cors_origins. Useful for Vercel
     # preview URLs and custom-domain subdomains, e.g.:
     #   https://.*\.vercel\.app
     #   https://(.*\.)?vidsopengine\.in
     cors_origin_regex: str = ""
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
-        """Accept either a JSON array string or a comma-separated string.
-
-        Render's dashboard doesn't escape values, so the JSON-array form is
-        easy to typo (smart quotes, missing brackets). The CSV form keeps
-        deploys friction-free:
-            CORS_ORIGINS=https://a.vercel.app,http://localhost:3000
-        """
-        if isinstance(v, str):
-            v = v.strip()
-            if not v:
-                return ["http://localhost:3000"]
-            if v.startswith("["):
-                return json.loads(v)
-            return [s.strip() for s in v.split(",") if s.strip()]
-        return v
+    @property
+    def cors_origin_list(self) -> List[str]:
+        """Parsed CORS origins. Accepts JSON-array or CSV input."""
+        v = (self.cors_origins or "").strip()
+        if not v:
+            return ["http://localhost:3000"]
+        if v.startswith("["):
+            return json.loads(v)
+        return [s.strip() for s in v.split(",") if s.strip()]
 
     @property
     def sop_ab_test_model_list(self) -> List[str]:
