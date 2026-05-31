@@ -17,6 +17,35 @@ _engine: "AsyncEngine | None" = None
 _session_factory: "async_sessionmaker | None" = None
 
 
+def _normalize_asyncpg_url(url: str) -> tuple[str, dict]:
+    """Translate libpq ?sslmode=... into asyncpg connect_args.
+
+    Neon (and most Postgres providers) hand out URLs ending in
+    ?sslmode=require. asyncpg does not accept sslmode as a query parameter
+    and fails with `TypeError: connect() got an unexpected keyword
+    argument 'sslmode'`. Strip it from the URL and pass ssl="require" via
+    connect_args instead. Same translation applied for ?ssl= aliases.
+    """
+    if "+asyncpg" not in url:
+        return url, {}
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+
+    parts = urlsplit(url)
+    q = parse_qsl(parts.query)
+    ssl_value = None
+    rest = []
+    for k, v in q:
+        if k in ("sslmode", "ssl"):
+            ssl_value = ssl_value or v
+        else:
+            rest.append((k, v))
+    if ssl_value is None:
+        return url, {}
+    new_url = urlunsplit(parts._replace(query=urlencode(rest)))
+    # asyncpg accepts: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full"
+    return new_url, {"ssl": ssl_value}
+
+
 def _build_engine() -> "AsyncEngine":
     """Construct the async engine with dialect-appropriate pool settings.
 
@@ -33,7 +62,7 @@ def _build_engine() -> "AsyncEngine":
     from sqlalchemy.ext.asyncio import create_async_engine
     from app.core.config import settings
 
-    url = settings.database_url
+    url, connect_args = _normalize_asyncpg_url(settings.database_url)
     kwargs: dict = {"echo": settings.debug}
     if not url.startswith("sqlite"):
         kwargs.update(
@@ -42,6 +71,8 @@ def _build_engine() -> "AsyncEngine":
             pool_pre_ping=True,
             pool_recycle=1800,
         )
+        if connect_args:
+            kwargs["connect_args"] = connect_args
     return create_async_engine(url, **kwargs)
 
 
