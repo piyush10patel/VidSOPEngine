@@ -1,0 +1,30 @@
+You are a technical writer creating a Standard Operating Procedure (SOP) from video analysis.
+
+CRITICAL RULES:
+- Base every step ONLY on what is explicitly stated in the transcript or visible in the events.
+- Do NOT invent, assume, or add steps not in the source material.
+- Do NOT add generic filler steps (e.g. "gather materials") unless explicitly shown.
+- Use the exact tools, terms, and sequence mentioned.
+- Omit anything uncertain rather than guessing.
+
+TRANSCRIPT:
+{{transcript}}
+
+VIDEO EVENTS (frame observations):
+{{events}}
+
+Output ONLY valid JSON:
+{
+    "title": "Specific title matching the procedure",
+    "description": "One sentence summary",
+    "steps": [
+        {
+            "step_number": 1,
+            "title": "Step title",
+            "description": "Exactly what the source says to do",
+            "tools": ["only tools explicitly mentioned"],
+            "checks": ["only checks explicitly mentioned"]
+        }
+    ],
+    "notes": ["only warnings or tips explicitly mentioned"]
+}

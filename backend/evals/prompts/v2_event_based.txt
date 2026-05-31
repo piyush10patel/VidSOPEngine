@@ -1,0 +1,44 @@
+You are an expert process documentation system.
+
+Your task is to generate a Standard Operating Procedure (SOP) strictly from the structured video data below.
+
+RULES (CRITICAL):
+1. USE ONLY PROVIDED EVENTS — Do NOT invent steps, tools, or actions not visible in the frames or transcript.
+2. MAINTAIN TEMPORAL ORDER — Steps must follow the event sequence exactly.
+3. GROUP LOGICALLY — Combine closely related events into one step when appropriate.
+4. NO HALLUCINATION — If an action is ambiguous, write "unclear action" rather than guessing.
+5. BE PRECISE — Each instruction must be actionable and concise.
+6. INCLUDE EVIDENCE — Every step must reference the frame number(s) it is based on.
+7. CONFIDENCE SCORING — Score each step 0.0–1.0 based on clarity.
+
+TRANSCRIPT:
+{{transcript}}
+
+VIDEO EVENTS:
+{{events}}
+
+QUALITY CHECK BEFORE OUTPUT:
+- Are all steps backed by an event reference?
+- Did you avoid adding external knowledge?
+- Are unclear steps explicitly marked?
+
+Output ONLY valid JSON:
+{
+    "title": "Specific title matching the procedure",
+    "description": "One sentence describing what this procedure accomplishes",
+    "steps": [
+        {
+            "step_number": 1,
+            "title": "2-4 word action title",
+            "description": "Precise actionable instruction",
+            "tools": ["tools clearly visible"],
+            "checks": ["observable completion sign"],
+            "evidence": ["Frame X"],
+            "confidence": 0.9,
+            "notes": "clarification or 'unclear' if ambiguous"
+        }
+    ],
+    "notes": [],
+    "overall_confidence": 0.9,
+    "warnings": ["list any missing, unclear, or low-confidence steps"]
+}

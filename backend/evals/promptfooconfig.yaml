@@ -1,0 +1,110 @@
+# Promptfoo eval — runs every prompt variation in prompts/ across every
+# case in tests.json (generated from data/failures.jsonl).
+#
+# Run:
+#   cd backend/evals
+#   python export_dataset.py            # rebuild tests.json from failures
+#   npx promptfoo@latest eval           # run all variations
+#   npx promptfoo@latest view           # open the comparison UI
+
+description: SOP generation prompt evaluation against failure dataset (multi-model A/B)
+
+prompts:
+  - file://prompts/v1_strict.txt
+  - file://prompts/v2_event_based.txt
+  - file://prompts/v3_cot.txt
+  - file://prompts/v4_few_shot.txt
+
+providers:
+  # ── Groq (baseline) ──────────────────────────────────────────────
+  - id: groq:llama-3.3-70b-versatile
+    label: groq-llama-3.3-70b
+    config:
+      apiKey: ${GROQ_API_KEY}
+      temperature: 0
+      response_format:
+        type: json_object
+
+  # ── Together AI — Qwen 2.5 72B (recommended for SOP synthesis) ──
+  - id: openai:chat:Qwen/Qwen2.5-72B-Instruct-Turbo
+    label: together-qwen-72b
+    config:
+      apiBaseUrl: https://api.together.xyz/v1
+      apiKey: ${TOGETHER_API_KEY}
+      temperature: 0
+      response_format:
+        type: json_object
+
+  # ── Together AI — Llama 3.1 70B (recommended for training) ──────
+  - id: openai:chat:meta-llama/Llama-3.1-70B-Instruct-Turbo
+    label: together-llama-3.1-70b
+    config:
+      apiBaseUrl: https://api.together.xyz/v1
+      apiKey: ${TOGETHER_API_KEY}
+      temperature: 0
+      response_format:
+        type: json_object
+
+  # ── Together AI — Mistral Small (recommended for checklists) ────
+  - id: openai:chat:mistralai/Mistral-Small-Instruct-2409
+    label: together-mistral-small
+    config:
+      apiBaseUrl: https://api.together.xyz/v1
+      apiKey: ${TOGETHER_API_KEY}
+      temperature: 0
+      response_format:
+        type: json_object
+
+tests: file://tests.json
+
+defaultTest:
+  assert:
+    # Output must parse as JSON
+    - type: is-json
+
+    # Must contain a steps array
+    - type: javascript
+      value: |
+        const out = JSON.parse(output);
+        const steps = out.sop || out.steps || [];
+        return Array.isArray(steps) && steps.length > 0;
+
+    # No hallucinated tools — every tool must appear in transcript or events
+    - type: javascript
+      value: file://assertions/no_hallucinated_tools.js
+      weight: 2
+
+    # Step count should be within 50% of expected
+    - type: javascript
+      value: file://assertions/step_count_match.js
+
+    # Step-level correctness — per-step action match + tool grounding
+    - type: javascript
+      value: file://assertions/step_level_correctness.js
+      weight: 3
+
+    # Step-level tool grounding — per-step hallucination check
+    - type: javascript
+      value: file://assertions/step_tool_grounding.js
+      weight: 2
+
+    # Temporal order preservation (LCS-based)
+    - type: javascript
+      value: file://assertions/step_order_preservation.js
+      weight: 2
+
+    # LLM-as-judge for semantic quality vs expected_output
+    - type: llm-rubric
+      provider: groq:llama-3.3-70b-versatile
+      value: |
+        Compare the predicted SOP against the expected SOP for the same video.
+        Score from 0.0 to 1.0 based on:
+        - Does it cover the same actions? (most important)
+        - Are tools and objects accurate (not hallucinated)?
+        - Is temporal order preserved?
+        - Are unclear steps marked rather than guessed?
+
+        Expected SOP: {{expected_output}}
+
+        Reply with just a JSON object: {"pass": true|false, "score": 0.0-1.0, "reason": "..."}
+      threshold: 0.6

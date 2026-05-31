@@ -1,0 +1,39 @@
+{
+  "name": "physical_simple",
+  "description": "Short physical procedure - filling a water bottle. Six clean transitions across eight frames, transcript and observations agree on every action.",
+  "transcript": "I am going to fill this water bottle. First I pick up the empty bottle from the counter. I unscrew the cap and place it next to the bottle. Then I hold the bottle under the tap and turn the tap on. I wait until the water reaches the top of the bottle. I turn the tap off and screw the cap back on. Finally I place the filled bottle back on the counter.",
+  "frame_observations": [
+    {"frame_num": 1, "image_url": "/test/frames/1.jpg", "description": "Empty water bottle standing on the counter, cap still attached."},
+    {"frame_num": 2, "image_url": "/test/frames/2.jpg", "description": "Right hand reaches for the empty bottle on the counter."},
+    {"frame_num": 3, "image_url": "/test/frames/3.jpg", "description": "Operator holds the bottle, unscrewing the cap with the other hand."},
+    {"frame_num": 4, "image_url": "/test/frames/4.jpg", "description": "Cap is fully off the bottle, placed on the counter beside it."},
+    {"frame_num": 5, "image_url": "/test/frames/5.jpg", "description": "Bottle held under the kitchen tap, tap handle being turned on."},
+    {"frame_num": 6, "image_url": "/test/frames/6.jpg", "description": "Water is flowing into the bottle, level visibly rising past halfway."},
+    {"frame_num": 7, "image_url": "/test/frames/7.jpg", "description": "Tap handle turned off, water flow stopped, bottle nearly full."},
+    {"frame_num": 8, "image_url": "/test/frames/8.jpg", "description": "Cap screwed back onto the bottle, bottle being placed on the counter."}
+  ],
+  "expected_sop": {
+    "title": "Fill a water bottle from the tap",
+    "description": "Pick up the bottle, unscrew the cap, fill it from the tap, and return it to the counter.",
+    "steps": [
+      {"step_number": 1, "title": "Pick up bottle",       "description": "Pick up the empty bottle from the counter.",                "source_frame_num": 2, "tools": ["water bottle"]},
+      {"step_number": 2, "title": "Unscrew cap",          "description": "Unscrew the cap from the bottle and place it on the counter.", "source_frame_num": 3, "tools": ["cap"]},
+      {"step_number": 3, "title": "Turn tap on",          "description": "Hold the bottle under the tap and turn the tap on.",         "source_frame_num": 5, "tools": ["tap"]},
+      {"step_number": 4, "title": "Fill bottle",          "description": "Wait until water reaches the top of the bottle.",            "source_frame_num": 6, "tools": []},
+      {"step_number": 5, "title": "Turn tap off",         "description": "Turn the tap off once the bottle is full.",                  "source_frame_num": 7, "tools": ["tap"]},
+      {"step_number": 6, "title": "Replace cap",          "description": "Screw the cap back onto the bottle and place it on the counter.", "source_frame_num": 8, "tools": ["cap"]}
+    ]
+  },
+  "baseline_sop": {
+    "title": "Fill a water bottle from the tap",
+    "description": "Operator fills a water bottle.",
+    "steps": [
+      {"step_number": 1, "title": "Pick up bottle",   "description": "Pick up the empty bottle.",                  "source_frame_num": 2, "image_url": "/test/frames/2.jpg", "tools": [], "checks": [], "evidence": ["Frame 2"]},
+      {"step_number": 2, "title": "Unscrew cap",      "description": "Unscrew the cap and place it on the counter.", "source_frame_num": 3, "image_url": "/test/frames/3.jpg", "tools": [], "checks": [], "evidence": ["Frame 3"]},
+      {"step_number": 3, "title": "Open tap",         "description": "Turn the tap on.",                            "source_frame_num": 5, "image_url": "/test/frames/5.jpg", "tools": [], "checks": [], "evidence": ["Frame 5"]},
+      {"step_number": 4, "title": "Fill bottle",      "description": "Wait until water reaches the top.",           "source_frame_num": 6, "image_url": "/test/frames/6.jpg", "tools": [], "checks": [], "evidence": ["Frame 6"]},
+      {"step_number": 5, "title": "Close tap",        "description": "Turn the tap off.",                           "source_frame_num": 7, "image_url": "/test/frames/7.jpg", "tools": [], "checks": [], "evidence": ["Frame 7"]},
+      {"step_number": 6, "title": "Replace cap",      "description": "Screw the cap back on the bottle.",           "source_frame_num": 8, "image_url": "/test/frames/8.jpg", "tools": [], "checks": [], "evidence": ["Frame 8"]}
+    ]
+  }
+}

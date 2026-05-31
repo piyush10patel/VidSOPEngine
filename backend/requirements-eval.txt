@@ -1,0 +1,21 @@
+# Offline evaluation suite dependencies.
+#
+# These are NOT installed on the Render production instance — installing
+# them locally is enough to run `python -m evals.offline.runner`. Pin
+# loose so we pick up upstream fixes on each install.
+#
+#   pip install -r requirements-render.txt -r requirements-eval.txt
+#
+deepeval>=1.5.0
+giskard>=2.15.0
+# DeepEval and Giskard's LLM judges go through litellm by default. We add
+# a thin Groq adapter wrapper around litellm so the judge reuses the same
+# GROQ_API_KEY already set in .env for production calls.
+litellm>=1.45.0
+rich>=13.7.0
+# Reads backend/.env so the existing GROQ_API_KEY production secret also
+# works for the eval suite without the user having to `export` manually.
+# The runner has a manual KEY=VALUE fallback if this is missing, but
+# python-dotenv handles quotes / export / interpolation correctly so
+# it's preferred.
+python-dotenv>=1.0.0

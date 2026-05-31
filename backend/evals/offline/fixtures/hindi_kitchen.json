@@ -1,0 +1,44 @@
+{
+  "name": "hindi_kitchen",
+  "target_language": "hi",
+  "description": "Hindi-language SOP exercising language axis. Source transcript is Hinglish (the way a real shop floor operator narrates), frame observations stay in English because the vision prompt is English.",
+  "transcript": "Pehle gas stove ko on karte hain. Phir frying pan rakhte hain. Thoda oil daalte hain - ek chamach hi. Oil garam hone do thoda. Gloves pehen lena, oil chhitak sakta hai. Phir pyaaz daalte hain, golden hone tak chalate raho. Jab pyaaz brown ho jaaye to gas band kar do.",
+  "frame_observations": [
+    {"frame_num": 1, "image_url": "/test/hk/1.jpg", "description": "Gas stove with knob being turned to the on position."},
+    {"frame_num": 2, "image_url": "/test/hk/2.jpg", "description": "Empty frying pan being placed on the lit burner."},
+    {"frame_num": 3, "image_url": "/test/hk/3.jpg", "description": "Operator pours a single spoonful of oil into the pan."},
+    {"frame_num": 4, "image_url": "/test/hk/4.jpg", "description": "Oil heating in pan, light shimmer visible on surface."},
+    {"frame_num": 5, "image_url": "/test/hk/5.jpg", "description": "Operator wearing gloves while standing near the stove."},
+    {"frame_num": 6, "image_url": "/test/hk/6.jpg", "description": "Sliced onions being added to the hot oil, sizzling visible."},
+    {"frame_num": 7, "image_url": "/test/hk/7.jpg", "description": "Onions being stirred with a wooden spoon, turning golden."},
+    {"frame_num": 8, "image_url": "/test/hk/8.jpg", "description": "Brown onions in pan, gas knob being turned off."}
+  ],
+  "expected_sop": {
+    "title": "प्याज भूनना",
+    "description": "गैस स्टोव पर तेल में प्याज को सुनहरा भूरा भूनना।",
+    "steps": [
+      {"step_number": 1, "title": "गैस ऑन करें",       "description": "गैस स्टोव का नॉब ऑन पोज़िशन पर घुमाएं।",        "source_frame_num": 1},
+      {"step_number": 2, "title": "पैन रखें",          "description": "खाली फ्राइंग पैन को बर्नर पर रखें।",            "source_frame_num": 2},
+      {"step_number": 3, "title": "तेल डालें",         "description": "एक चम्मच तेल पैन में डालें।",                  "source_frame_num": 3},
+      {"step_number": 4, "title": "तेल गरम करें",      "description": "तेल को थोड़ा गरम होने दें।",                   "source_frame_num": 4, "warning": "तेल छिटक सकता है — सावधानी रखें।"},
+      {"step_number": 5, "title": "ग्लव्स पहनें",      "description": "तेल छिटकने से बचने के लिए ग्लव्स पहन लें।",     "source_frame_num": 5, "warning": "PPE: ग्लव्स ज़रूरी।"},
+      {"step_number": 6, "title": "प्याज डालें",        "description": "कटा हुआ प्याज गरम तेल में डालें।",            "source_frame_num": 6},
+      {"step_number": 7, "title": "चलाते रहें",        "description": "प्याज को सुनहरा भूरा होने तक लगातार चलाएं।", "source_frame_num": 7},
+      {"step_number": 8, "title": "गैस बंद करें",       "description": "प्याज ब्राउन होने पर गैस ऑफ कर दें।",        "source_frame_num": 8}
+    ]
+  },
+  "baseline_sop": {
+    "title": "Onion sauté",
+    "description": "Operator sautés onions on a gas stove.",
+    "generation_metadata": {"output_language": "hi"},
+    "steps": [
+      {"step_number": 1, "title": "Turn on gas",        "description": "Turn the stove knob to on.",                 "source_frame_num": 1, "image_url": "/test/hk/1.jpg", "tools": [], "checks": [], "evidence": ["Frame 1"]},
+      {"step_number": 2, "title": "Place pan",          "description": "Place a frying pan on the burner.",          "source_frame_num": 2, "image_url": "/test/hk/2.jpg", "tools": [], "checks": [], "evidence": ["Frame 2"]},
+      {"step_number": 3, "title": "Add oil",            "description": "Operator pours oil into the pan and handles it carefully.", "source_frame_num": 3, "image_url": "/test/hk/3.jpg", "tools": [], "checks": [], "evidence": ["Frame 3"]},
+      {"step_number": 4, "title": "Heat oil",           "description": "Wait for the oil to get hot.",              "source_frame_num": 4, "image_url": "/test/hk/4.jpg", "tools": [], "checks": [], "evidence": ["Frame 4"]},
+      {"step_number": 5, "title": "Add onions",         "description": "Add chopped onions to the pan.",            "source_frame_num": 6, "image_url": "/test/hk/6.jpg", "tools": [], "checks": [], "evidence": ["Frame 6"]},
+      {"step_number": 6, "title": "Cook",               "description": "Stir until brown.",                          "source_frame_num": 7, "image_url": "/test/hk/7.jpg", "tools": [], "checks": [], "evidence": ["Frame 7"]},
+      {"step_number": 7, "title": "Turn off gas",       "description": "Turn off the gas.",                          "source_frame_num": 8, "image_url": "/test/hk/8.jpg", "tools": [], "checks": [], "evidence": ["Frame 8"]}
+    ]
+  }
+}

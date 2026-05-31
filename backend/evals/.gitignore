@@ -1,0 +1,12 @@
+# Generated test set (rebuild from failures.jsonl)
+tests.json
+
+# Promptfoo cache & results
+.promptfoo/
+output.json
+output.html
+output.csv
+
+# DSPy optimization output
+optimized_pipeline.json
+optimized_pipeline_*.json

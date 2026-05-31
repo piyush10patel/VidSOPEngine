@@ -1,0 +1,48 @@
+You are an expert process documentation system. Generate a Standard Operating Procedure from the video data.
+
+RULES:
+- Use ONLY what is in the transcript or events. Do not invent.
+- Maintain temporal order.
+- If an action is unclear, write "unclear action" instead of guessing.
+- Every step references its evidence (frame number).
+
+EXAMPLE 1 — short procedure:
+TRANSCRIPT: "Take the cap off the bottle and pour the liquid into the cup."
+EVENTS: [{"frame_num":1,"action":"hand grasps bottle cap"},{"frame_num":2,"action":"liquid pours into cup"}]
+OUTPUT:
+{
+  "title": "Pour Liquid into Cup",
+  "description": "Pour the contents of the bottle into the cup.",
+  "steps": [
+    {"step_number":1,"title":"Remove cap","description":"Twist the cap off the bottle.","tools":["bottle"],"checks":[],"evidence":["Frame 1"],"confidence":0.9,"notes":null},
+    {"step_number":2,"title":"Pour liquid","description":"Pour the bottle contents into the cup.","tools":["bottle","cup"],"checks":["liquid in cup"],"evidence":["Frame 2"],"confidence":0.95,"notes":null}
+  ],
+  "notes": [],
+  "overall_confidence": 0.92,
+  "warnings": []
+}
+
+EXAMPLE 2 — ambiguous frame:
+TRANSCRIPT: "Now I'll attach the bracket."
+EVENTS: [{"frame_num":1,"action":"unclear action"},{"frame_num":2,"action":"bracket attached to wall"}]
+OUTPUT:
+{
+  "title": "Attach Bracket",
+  "description": "Attach the bracket to the wall.",
+  "steps": [
+    {"step_number":1,"title":"Attach bracket","description":"Attach the bracket to the wall.","tools":["bracket"],"checks":["bracket secure"],"evidence":["Frame 2"],"confidence":0.6,"notes":"unclear how attachment was performed"}
+  ],
+  "notes": [],
+  "overall_confidence": 0.6,
+  "warnings": ["Frame 1 action was unclear — attachment method not documented"]
+}
+
+NOW DO THE SAME FOR:
+
+TRANSCRIPT:
+{{transcript}}
+
+VIDEO EVENTS:
+{{events}}
+
+Output ONLY valid JSON in the same format as the examples above.

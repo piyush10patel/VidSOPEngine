@@ -1,0 +1,39 @@
+{
+  "name": "uneven_pacing",
+  "description": "Three quick setup actions at the very start of the video followed by one slow closing action at the very end. The frame-bunching bug shows up here because the synthesis model is tempted to anchor the closing steps to the last frame.",
+  "transcript": "I quickly grab the screwdriver, then the wrench, then the cloth from the bench. After that I spend several minutes carefully wiping down the assembled motor housing before placing it on the rack.",
+  "frame_observations": [
+    {"frame_num": 1, "image_url": "/test/frames/u1.jpg", "description": "Hand reaching for the phillips screwdriver on the workbench."},
+    {"frame_num": 2, "image_url": "/test/frames/u2.jpg", "description": "Operator picking up the wrench from the bench."},
+    {"frame_num": 3, "image_url": "/test/frames/u3.jpg", "description": "Operator picking up the cloth from the bench corner."},
+    {"frame_num": 4, "image_url": "/test/frames/u4.jpg", "description": "Wiping the front of the motor housing with the cloth."},
+    {"frame_num": 5, "image_url": "/test/frames/u5.jpg", "description": "Wiping the side of the motor housing, cloth visibly soiled."},
+    {"frame_num": 6, "image_url": "/test/frames/u6.jpg", "description": "Wiping the back of the motor housing, almost finished."},
+    {"frame_num": 7, "image_url": "/test/frames/u7.jpg", "description": "Final inspection of the wiped motor housing, cloth set aside."},
+    {"frame_num": 8, "image_url": "/test/frames/u8.jpg", "description": "Clean motor housing being placed on the rack."}
+  ],
+  "expected_sop": {
+    "title": "Wipe and stage the motor housing",
+    "description": "Gather tools, wipe the motor housing, and place it on the rack.",
+    "steps": [
+      {"step_number": 1, "title": "Grab screwdriver", "description": "Pick up the phillips screwdriver from the bench.", "source_frame_num": 1, "tools": ["screwdriver"]},
+      {"step_number": 2, "title": "Grab wrench",      "description": "Pick up the wrench from the bench.",             "source_frame_num": 2, "tools": ["wrench"]},
+      {"step_number": 3, "title": "Grab cloth",       "description": "Pick up the cloth from the bench corner.",      "source_frame_num": 3, "tools": ["cloth"]},
+      {"step_number": 4, "title": "Wipe housing",     "description": "Wipe down the motor housing on every side.",   "source_frame_num": 5, "tools": ["cloth"]},
+      {"step_number": 5, "title": "Inspect housing",  "description": "Inspect the cleaned motor housing.",            "source_frame_num": 7, "tools": []},
+      {"step_number": 6, "title": "Place on rack",    "description": "Place the cleaned motor housing on the rack.", "source_frame_num": 8, "tools": []}
+    ]
+  },
+  "baseline_sop": {
+    "title": "Wipe and stage the motor housing",
+    "description": "Operator gathers tools and wipes the motor housing.",
+    "steps": [
+      {"step_number": 1, "title": "Grab screwdriver", "description": "Pick up the screwdriver.", "source_frame_num": 1, "image_url": "/test/frames/u1.jpg", "tools": ["screwdriver"], "checks": [], "evidence": ["Frame 1"]},
+      {"step_number": 2, "title": "Grab wrench",      "description": "Pick up the wrench.",     "source_frame_num": 2, "image_url": "/test/frames/u2.jpg", "tools": ["wrench"],      "checks": [], "evidence": ["Frame 2"]},
+      {"step_number": 3, "title": "Grab cloth",       "description": "Pick up the cloth.",      "source_frame_num": 3, "image_url": "/test/frames/u3.jpg", "tools": ["cloth"],       "checks": [], "evidence": ["Frame 3"]},
+      {"step_number": 4, "title": "Wipe housing",     "description": "Wipe down the motor housing.", "source_frame_num": 8, "image_url": "/test/frames/u8.jpg", "tools": ["cloth"], "checks": [], "evidence": ["Frame 8"]},
+      {"step_number": 5, "title": "Inspect housing",  "description": "Inspect the motor housing.",  "source_frame_num": 8, "image_url": "/test/frames/u8.jpg", "tools": [],        "checks": [], "evidence": ["Frame 8"]},
+      {"step_number": 6, "title": "Place on rack",    "description": "Place the motor housing on the rack.", "source_frame_num": 8, "image_url": "/test/frames/u8.jpg", "tools": [], "checks": [], "evidence": ["Frame 8"]}
+    ]
+  }
+}

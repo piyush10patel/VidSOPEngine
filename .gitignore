@@ -1,0 +1,26 @@
+*.key
+*.pem
+*.pub
+__pycache__/
+*.pyc
+
+# Local env / build
+.env
+.env.local
+.env.*.local
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Claude Code workspace settings (developer-local)
+.claude/
+.kiro/
+
+# DB scratch / logs
+*.db
+*.sqlite
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
