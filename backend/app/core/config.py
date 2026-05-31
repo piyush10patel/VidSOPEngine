@@ -275,13 +275,31 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> List[str]:
-        """Parsed CORS origins. Accepts JSON-array or CSV input."""
+        """Parsed CORS origins. Forgiving of paste-from-anywhere input.
+
+        Accepts all of these (and malformed variants of each):
+            https://a.com,https://b.com
+            ["https://a.com","https://b.com"]
+            ["https://a.com", "https://b.com"]
+            [https://a.com, https://b.com]   (missing quotes)
+        Strategy: strip JSON-array brackets and quotes, then split on
+        commas. We never call json.loads — that's why earlier strict
+        parsing failed on smart quotes and typos.
+        """
         v = (self.cors_origins or "").strip()
         if not v:
             return ["http://localhost:3000"]
-        if v.startswith("["):
-            return json.loads(v)
-        return [s.strip() for s in v.split(",") if s.strip()]
+        # Drop outer [ ] if the value looks like a JSON array.
+        if v.startswith("[") and v.endswith("]"):
+            v = v[1:-1]
+        # Split on commas, strip whitespace and any surrounding quotes
+        # (straight or smart) off each item.
+        parts = []
+        for s in v.split(","):
+            s = s.strip().strip('"').strip("'").strip("“").strip("”").strip("‘").strip("’")
+            if s:
+                parts.append(s)
+        return parts or ["http://localhost:3000"]
 
     @property
     def sop_ab_test_model_list(self) -> List[str]:
