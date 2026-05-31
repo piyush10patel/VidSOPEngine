@@ -13,8 +13,6 @@ const buildId =
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  // Enable standalone output for Docker deployment
-  output: "standalone",
   generateBuildId: async () => buildId,
   env: { NEXT_PUBLIC_BUILD_ID: buildId },
 };
