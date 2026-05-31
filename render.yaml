@@ -1,28 +1,23 @@
-# Render deployment for VidSOPEngine.
+# Render deployment for VidSOPEngine (portfolio scope).
 #
 # Stack:
-#   API           → Render (this file)
-#   Frontend      → Vercel (separate)
-#   Database      → Neon Postgres   (DATABASE_URL secret)
-#   Redis / queue → Upstash         (REDIS_URL secret)
-#   Object store  → Cloudflare R2   (R2_* secrets)
-#   AI inference  → Groq Whisper + OpenRouter vision + Together text models
+#   API           -> Render web service (this file)
+#   Frontend      -> Vercel (separate)
+#   Database      -> Neon Postgres        (DATABASE_URL secret)
+#   Object store  -> Cloudflare R2        (R2_* secrets)
+#   AI inference  -> Groq Whisper + OpenRouter vision + Together text models
 #
-# All secrets below are sync:false — set them in the Render dashboard or via
-# the CLI. Per-deploy persistent disks are NOT used: videos and frames live
-# in R2, rows live in Neon. /tmp is the only writable scratch the workers
-# need (ffmpeg + base64 encode).
+# Pipeline runs inline in the FastAPI process - no separate worker, no Redis.
+# Set all `sync: false` values in the Render dashboard after the first deploy.
 
 services:
-  # ----------------------------------------------------------------------
-  # Web API
-  # ----------------------------------------------------------------------
   - type: web
     name: vidsopengine-api
     runtime: python
+    plan: free
     region: oregon
     rootDir: backend
-    buildCommand: bash render-build.sh
+    buildCommand: pip install --upgrade pip && pip install -r requirements-render.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: APP_NAME
@@ -31,29 +26,27 @@ services:
         value: production
       - key: DEBUG
         value: "false"
-      # rq = enqueue video pipelines onto the Upstash queue for the
-      # vidsopengine-worker service to consume. Keeps the API event loop
-      # free during the 5-10 min ffmpeg + vision + synthesis pass. The
-      # router auto-falls-back to inline if Redis enqueue fails, so
-      # this is safe even when the worker is briefly unavailable.
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+      # Inline pipeline - SOP generation runs in a FastAPI background task.
+      # No worker service, no Redis. Trade-off: API process is busy during
+      # the 1-3 min synthesis pass, but free-tier deploys stay simple.
       - key: PIPELINE_RUN_MODE
-        value: rq
+        value: inline
 
       # --- Neon Postgres ---
-      # Set to a postgresql+asyncpg://… URL from Neon. Use the pooled
-      # connection string and append ?sslmode=require if not already set.
+      # Paste the pooled connection string from Neon's dashboard. Make sure
+      # it starts with postgresql+asyncpg:// (rewrite the scheme if Neon
+      # gives you postgresql://) and ends with ?sslmode=require.
       - key: DATABASE_URL
-        sync: false
-
-      # --- Upstash Redis (rediss://) ---
-      - key: REDIS_URL
         sync: false
 
       # --- Cloudflare R2 ---
       - key: R2_BUCKET
         sync: false
       - key: R2_ENDPOINT
-        sync: false        # e.g. https://<account>.r2.cloudflarestorage.com
+        sync: false        # https://<account>.r2.cloudflarestorage.com
       - key: R2_ACCESS_KEY_ID
         sync: false
       - key: R2_SECRET_ACCESS_KEY
@@ -63,13 +56,14 @@ services:
       - key: R2_PRESIGNED_TTL_SECONDS
         value: "3600"
 
-      # /tmp scratch dir for ffmpeg + Whisper audio extraction.
+      # /tmp scratch for ffmpeg + Whisper audio extraction. Files are
+      # uploaded to R2 after processing and then cleaned from /tmp.
       - key: UPLOAD_DIR
         value: /tmp/vidsop/videos
       - key: MAX_FILE_SIZE_MB
         value: "500"
 
-      # --- AI inference (Groq for Whisper, OpenRouter for vision, Together for text) ---
+      # --- AI inference ---
       - key: GROQ_API_KEY
         sync: false
       - key: TOGETHER_API_KEY
@@ -77,44 +71,23 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: LLM_PROVIDER
-        value: groq
+        value: together
       - key: VISION_PROVIDER
         value: openrouter
       - key: VISION_MODEL
         value: qwen/qwen3-vl-8b-instruct
       - key: WHISPER_MODEL_SIZE
         value: base
-      - key: LLM_MODEL
-        value: llama-3.3-70b-versatile
-      - key: GROQ_VISION_MODEL
-        value: llama-3.2-11b-vision-preview
       - key: SOP_SYNTHESIS_MODEL
         value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput
       - key: SOP_VERIFICATION_MODEL
         value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput
-      - key: WORKFLOW_MODEL
-        value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput
-      - key: CHECKLIST_MODEL
-        value: Qwen/Qwen3.5-9B
-      - key: TRAINING_MODEL
+      - key: SOP_TRANSLATION_MODEL
         value: meta-llama/Llama-3.3-70B-Instruct-Turbo
-      - key: SOP_AB_TEST_MODELS
-        value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput,meta-llama/Llama-3.3-70B-Instruct-Turbo
 
-      # Per-deploy wipe — false now that data lives in Neon + R2 (kept on
-      # purpose between deploys). Flip to true if you want clean-slate deploys.
+      # Persistent storage via R2 - do NOT wipe on startup.
       - key: WIPE_VIDEOS_ON_STARTUP
         value: "false"
-
-      # --- Observability ---
-      - key: BRAINTRUST_API_KEY
-        sync: false
-      - key: BRAINTRUST_PROJECT
-        value: VidSOPEngine
-      - key: LANGSMITH_API_KEY
-        sync: false
-      - key: LANGSMITH_PROJECT
-        value: VidSOPEngine
 
       # --- Auth ---
       - key: JWT_SECRET_KEY
@@ -123,88 +96,16 @@ services:
         value: HS256
       - key: JWT_EXPIRATION_MINUTES
         value: "60"
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_COOKIE_SAMESITE
+        value: "none"
 
-      # --- CORS — Vercel frontend + custom domain ---
+      # --- CORS ---
+      # After the first Vercel deploy, replace the placeholder below with
+      # your real Vercel URL (e.g. https://vidsopengine.vercel.app). The
+      # regex covers Vercel preview deploys automatically.
       - key: CORS_ORIGINS
-        value: '["https://vidsopengine.in","https://www.vidsopengine.in","https://vidsopengine.vercel.app","http://localhost:3000"]'
-      # Regex to cover Vercel preview deploys and any vidsopengine.in subdomain.
+        sync: false        # JSON array, e.g. ["https://your-app.vercel.app","http://localhost:3000"]
       - key: CORS_ORIGIN_REGEX
-        value: 'https://(.*\.vercel\.app|(.*\.)?vidsopengine\.in)'
-      - key: PYTHON_VERSION
-        value: "3.11.0"
-
-  # ----------------------------------------------------------------------
-  # Background worker (RQ — consumes Upstash queue)
-  # ----------------------------------------------------------------------
-  - type: worker
-    name: vidsopengine-worker
-    runtime: python
-    region: oregon
-    rootDir: backend
-    buildCommand: bash render-build.sh
-    startCommand: python worker.py
-    envVars:
-      - key: APP_NAME
-        value: VidSOPEngine
-      - key: APP_ENV
-        value: production
-      - key: DEBUG
-        value: "false"
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: R2_BUCKET
-        sync: false
-      - key: R2_ENDPOINT
-        sync: false
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_PRESIGNED_TTL_SECONDS
-        value: "3600"
-      - key: UPLOAD_DIR
-        value: /tmp/vidsop/videos
-      - key: MAX_FILE_SIZE_MB
-        value: "500"
-      - key: GROQ_API_KEY
-        sync: false
-      - key: TOGETHER_API_KEY
-        sync: false
-      - key: OPENROUTER_API_KEY
-        sync: false
-      - key: LLM_PROVIDER
-        value: groq
-      - key: VISION_PROVIDER
-        value: openrouter
-      - key: VISION_MODEL
-        value: qwen/qwen3-vl-8b-instruct
-      - key: WHISPER_MODEL_SIZE
-        value: base
-      - key: LLM_MODEL
-        value: llama-3.3-70b-versatile
-      - key: GROQ_VISION_MODEL
-        value: llama-3.2-11b-vision-preview
-      - key: SOP_SYNTHESIS_MODEL
-        value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput
-      - key: SOP_VERIFICATION_MODEL
-        value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput
-      - key: WORKFLOW_MODEL
-        value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput
-      - key: CHECKLIST_MODEL
-        value: Qwen/Qwen3.5-9B
-      - key: TRAINING_MODEL
-        value: meta-llama/Llama-3.3-70B-Instruct-Turbo
-      - key: SOP_AB_TEST_MODELS
-        value: Qwen/Qwen3-235B-A22B-Instruct-2507-tput,meta-llama/Llama-3.3-70B-Instruct-Turbo
-      - key: BRAINTRUST_API_KEY
-        sync: false
-      - key: BRAINTRUST_PROJECT
-        value: VidSOPEngine
-      - key: LANGSMITH_API_KEY
-        sync: false
-      - key: LANGSMITH_PROJECT
-        value: VidSOPEngine
-      - key: PYTHON_VERSION
-        value: "3.11.0"
+        value: 'https://.*\.vercel\.app'
