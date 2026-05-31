@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Box, Button, Flex, HStack, Input, Text, Textarea, VStack } from '@chakra-ui/react';
 import {
   ArrowDown,

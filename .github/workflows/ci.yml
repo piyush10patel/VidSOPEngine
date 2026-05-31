@@ -11,6 +11,11 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Opt JavaScript actions (checkout, setup-python, setup-node) into the
+# Node 24 runtime so the deprecation notice doesn't pollute log output.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   backend-quality-gate:
     name: Backend — quality gate
